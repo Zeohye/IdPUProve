@@ -67,8 +67,8 @@ public class Util {
             value = value.substring(2);
             int length = (value.length()/2);
         String lengthOct = Integer.toOctalString(length);
-        if(lengthOct.length() <8)
-            for(int i = lengthOct.length();i<8;i++)
+        if((lengthOct.length()%8) !=0)
+            for(int i = lengthOct.length()%8;i<8;i++)
                 lengthOct = "0"+lengthOct;
         return octectStringToByteArray(lengthOct+value);
     }
@@ -80,7 +80,8 @@ public class Util {
             for(int i = lengthList.length();i<8;i++)
                 lengthList = "0"+lengthList;
         try {
-            outputStream.write(octectStringToByteArray(lengthList));
+            byte[] tmp = octectStringToByteArray(lengthList);
+            outputStream.write(tmp);
             for(int i=0; i<list.size();i++)
                 outputStream.write( getByteArrayToHash(list.get(i)) );
         } catch (IOException e) {
@@ -103,9 +104,11 @@ public class Util {
     }
 
     private static byte[] octectStringToByteArray(String s){
+        if(s.length()%2!=0)
+            s="0"+s;
         byte bs[] = new byte[s.length() / 2];
         for (int i=0; i<s.length(); i+=2)
-            bs[i/2] = (byte)Integer.parseInt(s.substring(i, i+2),16);
+            bs[i / 2] = (byte) Integer.parseInt(s.substring(i, i+2),16);
         return bs;
     }
 }
