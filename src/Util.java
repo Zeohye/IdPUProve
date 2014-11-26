@@ -4,12 +4,34 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Objects;
+import java.nio.ByteBuffer;
+import java.math.BigInteger;
 
 /**
  * Created by Nils Henning on 11/25/2014.
  */
 public class Util {
 
+    public static String GetRandom() {
+        return GetRandom(false);
+    }
+
+    public static String GetRandom(boolean isMult) {
+        return "42";
+        // TODO: fix
+    }
+
+    public static String ModPow(String base, String exp) {
+        return Util.BigIntToHex(Util.HexToBigInt(base).modPow(Util.HexToBigInt(exp),Util.HexToBigInt(Parameters.p)));
+    }
+
+    public static String Mult(String f1, String f2) {
+        return Util.BigIntToHex(Util.HexToBigInt(f1).multiply(Util.HexToBigInt(f2)).mod(Util.HexToBigInt(Parameters.p)));
+    }
+
+    public static String Addq(String f1, String f2) {
+        return Util.BigIntToHex(Util.HexToBigInt(f1).add(Util.HexToBigInt(f2)).mod(Util.HexToBigInt(Parameters.q)));
+    }
 
     public static String ComputeXi(int q, int ei, String ai){
         String xi ="";
@@ -19,15 +41,43 @@ public class Util {
             else
                 xi= "";//Hash(q);
         else if(ei==0x00) {
-            if(0 <= Integer.parseInt(ai) && Integer.parseInt(ai) <= q)
-                xi = ai+"";
+            if(0 <= Integer.parseInt(ai) && Integer.parseInt(ai) < q)
+                xi = ai;
         }else
             xi="Error";
 
         return xi;
     }
 
+    public static String ComputeXt(String UIDp, String g0, ArrayList<Integer> es, String TI) {
+        ArrayList<Object> hashList = new ArrayList<Object>();
+        hashList.add(UIDp); hashList.add(Parameters.p); hashList.add(Parameters.q);
+        hashList.add(Parameters.g);
+        ArrayList<String> gs = new ArrayList<String>();
+        // TODO: what to do??
+        //String P = Hash(UIDp + Parameters.p + Parameters.q + Parameters.g + es);
+        return "";
+    }
+
+    public static String HashToGroup(Object value) {
+        BigInteger hash = new BigInteger(byteHash(value));
+        BigInteger q = HexToBigInt(Parameters.q);
+        return BigIntToHex(hash.mod(q));
+    }
+
     public static String Hash (Object value){
+        return bytesToHex(byteHash(value));
+    }
+
+    public static String BigIntToHex(BigInteger value) {
+        return bytesToHex(value.toByteArray());
+    }
+
+    public static BigInteger HexToBigInt(String value) {
+        return new BigInteger(value, 16);
+    }
+
+    private static byte[] byteHash(Object value) {
         byte[] hash=getByteArrayToHash(value);
 
         MessageDigest digest = null;
@@ -37,7 +87,7 @@ public class Util {
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
-        return bytesToHex(hash);
+        return hash;
     }
 
     private static byte[] getByteArrayToHash(Object value){
