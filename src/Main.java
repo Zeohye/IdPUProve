@@ -21,6 +21,8 @@ public class Main {
         list.clear();
 
         System.out.println("hash_group (1.3.6.1.4.1.311.75.1.1.1) = \n7b36c8a3cf1552077e1cacb365888d25c9dc54f3faed7aff9b11859aa8e4ba06");
+        list.add(Parameters.p);
+        list.add(Parameters.q);
         list.add(Parameters.g);
         list.add(Parameters.g1);
         list.add(Parameters.g2);
@@ -72,6 +74,8 @@ public class Main {
         list.add(Parameters.g48);
         list.add(Parameters.g49);
         list.add(Parameters.g50);
+        list.add(Parameters.gt);
+        list.add(Parameters.gd);
         System.out.println(Util.Hash(list));
 
 
