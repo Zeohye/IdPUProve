@@ -63,12 +63,14 @@ public class Util {
         return octectStringToByteArray("00000000");
     }
     private static byte[] Hash_octectstring(String value){
-        int length = (value.length()/2)-1; //each oct is 2 chars, and we ignore the first 0x
+        if(value.substring(0,2).equals("0x"))
+            value = value.substring(2);
+            int length = (value.length()/2);
         String lengthOct = Integer.toOctalString(length);
         if(lengthOct.length() <8)
             for(int i = lengthOct.length();i<8;i++)
                 lengthOct = "0"+lengthOct;
-        return octectStringToByteArray(lengthOct+value.substring(2));
+        return octectStringToByteArray(lengthOct+value);
     }
     private static byte[] Hash_list(ArrayList<Object> list){
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
