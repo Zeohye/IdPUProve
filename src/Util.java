@@ -1,72 +1,153 @@
+import java.awt.*;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Objects;
-import java.nio.ByteBuffer;
 import java.math.BigInteger;
+import java.util.Objects;
+import java.util.Random;
 
 /**
  * Created by Nils Henning on 11/25/2014.
  */
 public class Util {
 
-    public static String GetRandom() {
+    public static BigInteger GetRandom() {
         return GetRandom(false);
     }
 
-    public static String GetRandom(boolean isMult) {
-        return "42";
-        // TODO: fix
+    public static BigInteger GetRandom(boolean isMult) {
+        BigInteger r;
+        Random rnd = new Random();
+        do {
+            r = new BigInteger(256,rnd);
+        }while (r.compareTo(Parameters.q)>=0 || (isMult && r.compareTo(new BigInteger("0"))==0));
+        return r;
     }
 
-    public static String ModPow(String base, String exp) {
-        return Util.BigIntToHex(Util.HexToBigInt(base).modPow(Util.HexToBigInt(exp),Util.HexToBigInt(Parameters.p)));
-    }
-
-    public static String Mult(String f1, String f2) {
-        return Util.BigIntToHex(Util.HexToBigInt(f1).multiply(Util.HexToBigInt(f2)).mod(Util.HexToBigInt(Parameters.p)));
-    }
-
-    public static String Addq(String f1, String f2) {
-        return Util.BigIntToHex(Util.HexToBigInt(f1).add(Util.HexToBigInt(f2)).mod(Util.HexToBigInt(Parameters.q)));
-    }
-
-    public static String ComputeXi(int q, int ei, String ai){
-        String xi ="";
+    public static BigInteger ComputeXi(BigInteger q, int ei, BigInteger ai){
+        BigInteger xi = new BigInteger("0");
         if(ei == 0x01)
             if(ai == null)
-                xi="0";
+                xi=new BigInteger("0");
             else
-                xi= "";//Hash(q);
+                xi= HashToGroup(Hash(ai));
         else if(ei==0x00) {
-            if(0 <= Integer.parseInt(ai) && Integer.parseInt(ai) < q)
+            if(new BigInteger("0").compareTo(ai) < 1 && ai.compareTo(q) == -1)
                 xi = ai;
-        }else
-            xi="Error";
-
+        }else {
+            System.out.println("xi has invalid value during ComputeXi");
+            System.exit(-1);
+        }
         return xi;
     }
 
-    public static String ComputeXt(String UIDp, String g0, ArrayList<Integer> es, String TI) {
+    public static BigInteger ComputeXt(BigInteger UIDp, BigInteger g0, ArrayList<Integer> es, BigInteger TI) {
         ArrayList<Object> hashList = new ArrayList<Object>();
-        hashList.add(UIDp); hashList.add(Parameters.p); hashList.add(Parameters.q);
-        hashList.add(Parameters.g);
-        ArrayList<String> gs = new ArrayList<String>();
-        // TODO: what to do??
-        //String P = Hash(UIDp + Parameters.p + Parameters.q + Parameters.g + es);
-        return "";
+        hashList.add(UIDp); hashList.add(descGroup());
+        hashList.add(gList(g0));
+        hashList.add(es);
+
+        BigInteger P = Hash(hashList);
+        ArrayList<Object>  hashList2 = new ArrayList<Object>();
+        hashList2.add(new Byte((byte)0x01));
+        hashList2.add(P);
+        hashList2.add(TI);
+        return HashToGroup(Hash(hashList2));
     }
 
-    public static String HashToGroup(Object value) {
-        BigInteger hash = new BigInteger(byteHash(value));
-        BigInteger q = HexToBigInt(Parameters.q);
-        return BigIntToHex(hash.mod(q));
+    public static BigInteger computeGamma(BigInteger xt, ArrayList<BigInteger> xis,BigInteger g0) {
+        BigInteger y = g0;
+        for(int i=0; i < Parameters.gxList.size();i++)
+            y = y.multiply(Parameters.gxList.get(i).modPow(xis.get(i), Parameters.p));
+        y = y.multiply(Parameters.gt.modPow(xt,Parameters.p));
+        return y;
     }
 
-    public static String Hash (Object value){
-        return bytesToHex(byteHash(value));
+    public static BigInteger ComputeIDToken(UProveToken t) {
+        ArrayList<Object> hashList = new ArrayList<Object>();
+        hashList.add(t.h);
+        hashList.add(t.sigmaz);
+        hashList.add(t.sigmac);
+        hashList.add(t.sigmar);
+        return Util.Hash(hashList);
+    }
+
+    public static BigInteger generateScopeElement(ArrayList<Object> descG,String s) {
+        return ComputeVerifiableyRandomElement(descG,s,0);
+    }
+
+    private static BigInteger ComputeVerifiableyRandomElement(ArrayList<Object> descG, String s,int index) {
+        BigInteger e = (Parameters.p.subtract(BigInteger.ONE)).divide(Parameters.q);
+        byte count = 0;
+        BigInteger g = new BigInteger("0");
+        BigInteger TWO = new BigInteger("2");
+        while (g.compareTo(TWO) == -1 ){
+            if(count >= 255){
+                System.out.println("Error count larger than allowed in ComputeVerifiableyRandomElement");
+                System.exit(-1);
+            }
+            count++;
+            BigInteger w = Hashraw(binaryConcat(s,index,count));
+            g = w.modPow(e,Parameters.p);
+        }
+        return g;
+    }
+
+    private static String binaryConcat(String s,int index,int count) {
+        int context = Integer.parseInt(s,2);
+        int hex = Integer.parseInt("6767656E",16);
+        int b = Integer.bitCount(hex);
+        int ret = context << b;
+        ret |= hex;
+        b = Integer.bitCount(index);
+        ret = ret << b;
+        ret |=index;
+        b= Integer.bitCount(count);
+        ret = ret << b;
+        ret |= count;
+        return Integer.toString(ret);
+    }
+
+
+    private static ArrayList<Object> gList(BigInteger g0) {
+        ArrayList<Object> ret = new ArrayList<Object>();
+        ret.add(g0);
+        ret.add(Parameters.g1);
+        ret.add(Parameters.g2);
+        ret.add(Parameters.g3);
+        ret.add(Parameters.g4);
+        ret.add(Parameters.g5);
+        return ret;
+    }
+
+
+    public static ArrayList<Object> descGroup(){
+        ArrayList<Object> ret = new ArrayList<Object>();
+        ret.add(Parameters.p);
+        ret.add(Parameters.q);
+        ret.add(Parameters.g);
+        return ret;
+    }
+
+    public static BigInteger HashToGroup(BigInteger value) {
+        return value.mod(Parameters.q);
+    }
+
+    public static BigInteger Hash (Object value){
+        return HexToBigInt(bytesToHex(byteHash(value)));
+    }
+    private static BigInteger Hashraw(String value) {
+        byte[] hash = octectStringToByteArray(value);
+        MessageDigest digest = null;
+        try {
+            digest = MessageDigest.getInstance("SHA-256");
+            hash = digest.digest(hash);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return new BigInteger(hash);
     }
 
     public static String BigIntToHex(BigInteger value) {
@@ -100,6 +181,9 @@ public class Util {
             hash = Hash_null();
         else if (value instanceof ArrayList)
             hash = Hash_list((ArrayList<Object>)value);
+        else if (value instanceof BigInteger)
+            hash = Hash_octectstring(BigIntToHex((BigInteger)value));
+
 
         return hash;
     }

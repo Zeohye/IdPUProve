@@ -1,38 +1,51 @@
+import sun.security.util.BigInt;
+
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Set;
 
 /**
  * Created by Nils Henning on 11/25/2014.
  */
 public class Issuer {
-	private String y0;
-	public final String g0;
-	private String currentW;
+	private BigInteger y0;
+	public final BigInteger g0;
+	private BigInteger currentW;
+    private final BigInteger UIDp;
 
-	public Issuer(String y0, String g0) {
-		// TODO: generation af g0
+	public Issuer(BigInteger y0,BigInteger UIDp) {
 		this.y0 = y0;
-		this.g0 = g0;
+		this.g0 = Parameters.g.modPow(y0,Parameters.p);
+        this.UIDp = UIDp;
 	}
 
 	public class FirstMessage {
-		public final String sigmaz, sigmaa, sigmab;
-		public FirstMessage(String sz, String sa, String sb) {
+		public final BigInteger sigmaz, sigmaa, sigmab;
+		public FirstMessage(BigInteger sz, BigInteger sa, BigInteger sb) {
 			sigmaz = sz; sigmaa = sa; sigmab = sb;
 		}
 	}
 
-	public FirstMessage getFirstMessage(String xt, ArrayList<String> xis, String gamma) {
-		String sigmaz = Util.ModPow(gamma, y0);
-		String w = currentW = Util.GetRandom();
-		String sigmaa = Util.ModPow(Parameters.g, w);
-		String sigmab = Util.ModPow(gamma, w);
+	public FirstMessage getFirstMessage(ArrayList<BigInteger> attributeValues, ArrayList<Integer> es,BigInteger TI) {
+        BigInteger xt = Util.ComputeXt(UIDp, g0, es, TI);
+        ArrayList<BigInteger> xis = new ArrayList<BigInteger>();
+        for(int i=0; i<attributeValues.size();i++)
+            xis.add(Util.ComputeXi(Parameters.q,es.get(i),attributeValues.get(i)));
+        BigInteger gamma = Util.computeGamma(xt, xis,g0);
+
+        BigInteger sigmaz = gamma.modPow(y0,Parameters.p);
+		BigInteger w = currentW = Util.GetRandom();
+        BigInteger sigmaa = Parameters.g.modPow(w,Parameters.p);
+        BigInteger sigmab = gamma.modPow(w,Parameters.p);
+
 		return new FirstMessage(sigmaz, sigmaa, sigmab);
 	}
 
-	public String getThirdMessage(String sigmac) {
-		String sigmar = Util.Addq(Util.Mult(sigmac, y0), currentW); // TODO: this might go wrong mod P
-		currentW = "";
-		return sigmar;
+	public BigInteger getThirdMessage(BigInteger sigmac) {
+        BigInteger sigma = sigmac.multiply(y0).add(currentW).mod(Parameters.q);;
+        currentW = null;
+		return sigma;
 	}
+    public BigInteger getUIDp(){return UIDp;}
 }

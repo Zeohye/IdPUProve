@@ -1,14 +1,16 @@
+import java.math.BigInteger;
+
 public class UProveToken {
-	public final String UIDp;
-	public final String h;
-	public final String TI;
-	public final String PI;
-	public final String sigmaz;
-	public final String sigmac;
-	public final String sigmar;
+	public final BigInteger UIDp;
+	public final BigInteger h;
+	public final BigInteger TI;
+	public final BigInteger PI;
+	public final BigInteger sigmaz;
+	public final BigInteger sigmac;
+	public final BigInteger sigmar;
 	public final boolean d = false;
 
-	public UProveToken(String u, String h, String t, String p, String sz, String sc, String sr) {
+	public UProveToken(BigInteger u, BigInteger h, BigInteger t, BigInteger p, BigInteger sz, BigInteger sc, BigInteger sr) {
 		UIDp = u;
 		this.h = h;
 		TI = t;
