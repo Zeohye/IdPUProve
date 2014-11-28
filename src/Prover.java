@@ -63,11 +63,11 @@ public class Prover {
         hashList.add(sigmazp);
         hashList.add(sigmaap);
         hashList.add(sigmabp);
-        BigInteger sigmacp = Util.Hash(hashList);
-        BigInteger sigmac = sigmacp.add(b1);
+        BigInteger sigmacp = Util.HashToGroup(Util.Hash(hashList));
+        BigInteger sigmac = sigmacp.add(b1).mod(Parameters.q);
 
         BigInteger sigmar = issuer.getThirdMessage(sigmac);
-        BigInteger sigmarp = sigmar.add(b2);
+        BigInteger sigmarp = sigmar.add(b2).mod(Parameters.q);
 
 		// Here we should delete stuff, but they are internal variables and will be deleted when we return
 

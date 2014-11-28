@@ -69,7 +69,8 @@ public class Verifier {
         hashList.add(Parameters.g.modPow(t.sigmar,Parameters.p).multiply(g0.modPow(t.sigmac.negate(),Parameters.p)));
         hashList.add(t.h.modPow(t.sigmar,Parameters.p).multiply(t.sigmaz.modPow(t.sigmac.negate(),Parameters.p)));
         BigInteger sigmac = Util.HashToGroup(Util.Hash(hashList));
-        if(!t.sigmac.equals(sigmac)) return false;
+        if(!t.sigmac.equals(sigmac)){
+            System.out.println("test");return false;}
 
         return true;
     }
